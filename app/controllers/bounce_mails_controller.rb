@@ -41,11 +41,17 @@ class BounceMailsController < ApplicationController
           end
         }
       else
-        @bounce_mails = BounceMail.select(:id, :timestamp, :recipient, :senderdomain, :addresser, :addresseralias, :reason, :digest, :subject, :softbounce,
-                                               'whitelist_mails.id AS whitelisted')
-                                  .joins('LEFT JOIN whitelist_mails' +
-                                         '  ON bounce_mails.recipient = whitelist_mails.recipient ' +
-                                         ' AND bounce_mails.senderdomain = whitelist_mails.senderdomain')
+        enable_bounce_mail_select_on_no_query = Rails.application.config.sisito.fetch(:enable_bounce_mail_select_on_no_query, true)
+        @bounce_mails =
+          if enable_bounce_mail_select_on_no_query
+            BounceMail.select(:id, :timestamp, :recipient, :senderdomain, :addresser, :addresseralias, :reason, :digest, :subject, :softbounce,
+                                                   'whitelist_mails.id AS whitelisted')
+                                      .joins('LEFT JOIN whitelist_mails' +
+                                             '  ON bounce_mails.recipient = whitelist_mails.recipient ' +
+                                             ' AND bounce_mails.senderdomain = whitelist_mails.senderdomain')
+          else
+            BounceMail.none
+          end
 
         if params[:reason].present?
           @reason = params[:reason]
