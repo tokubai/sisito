@@ -10,21 +10,23 @@
   </div>
 </section>
 
-<section>
-  <%= form_tag bounce_mails_path, method: :get do %>
-    <div class="col-sm-8"></div>
-    <div class="col-sm-2">
-      <%= select_tag :addresser,
-            options_for_select([''] + BounceMail.group(:addresser).pluck(:addresser).sort, selected: @addresser),
-            class: 'form-control', onchange: 'this.form.submit()' %>
-    </div>
-    <div class="col-sm-2">
-      <%= select_tag :reason,
-            options_for_select([''] + Rails.application.config.sisimai[:reasons], selected: @reason),
-            class: 'form-control', onchange: 'this.form.submit()' %>
-    </div>
-  <% end %>
-</section>
+<% if !@only_searched_bounce_mails %>
+  <section>
+    <%= form_tag bounce_mails_path, method: :get do %>
+      <div class="col-sm-8"></div>
+      <div class="col-sm-2">
+        <%= select_tag :addresser,
+              options_for_select([''] + BounceMail.group(:addresser).pluck(:addresser).sort, selected: @addresser),
+              class: 'form-control', onchange: 'this.form.submit()' %>
+      </div>
+      <div class="col-sm-2">
+        <%= select_tag :reason,
+              options_for_select([''] + Rails.application.config.sisimai[:reasons], selected: @reason),
+              class: 'form-control', onchange: 'this.form.submit()' %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
 
 <% if @bounce_mails.present? %>
   <section>
