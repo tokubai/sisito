@@ -2,6 +2,7 @@ class BounceMailsController < ApplicationController
   before_action :set_bounce_mail, only: [:show]
 
   def index
+    @show_all_bounce_mails = Rails.application.config.sisito.fetch(:show_all_bounce_mails, true)
     if params[:reason].present?
       cookies.delete(:query)
     else
@@ -41,23 +42,30 @@ class BounceMailsController < ApplicationController
           end
         }
       else
-        @bounce_mails = BounceMail.select(:id, :timestamp, :recipient, :senderdomain, :addresser, :addresseralias, :reason, :digest, :subject, :softbounce,
-                                               'whitelist_mails.id AS whitelisted')
-                                  .joins('LEFT JOIN whitelist_mails' +
-                                         '  ON bounce_mails.recipient = whitelist_mails.recipient ' +
-                                         ' AND bounce_mails.senderdomain = whitelist_mails.senderdomain')
+        if @show_all_bounce_mails
+          @bounce_mails = BounceMail.select(:id, :timestamp, :recipient, :senderdomain, :addresser, :addresseralias, :reason, :digest, :subject, :softbounce,
+                                                 'whitelist_mails.id AS whitelisted')
+                                    .joins('LEFT JOIN whitelist_mails' +
+                                           '  ON bounce_mails.recipient = whitelist_mails.recipient ' +
+                                           ' AND bounce_mails.senderdomain = whitelist_mails.senderdomain')
 
-        if params[:reason].present?
-          @reason = params[:reason]
-          @bounce_mails = @bounce_mails.where(reason: @reason)
+          if params[:reason].present?
+            @reason = params[:reason]
+            @bounce_mails = @bounce_mails.where(reason: @reason)
+          end
+
+          if params[:addresser].present?
+            @addresser = params[:addresser]
+            @bounce_mails = @bounce_mails.where(addresser: @addresser)
+          end
+
+          @bounce_mails = @bounce_mails.order(timestamp: :desc).page(params[:page])
+        else
+          @bounce_mails = BounceMail.none
+          @reason = nil
+          @addresser = nil
         end
 
-        if params[:addresser].present?
-          @addresser = params[:addresser]
-          @bounce_mails = @bounce_mails.where(addresser: @addresser)
-        end
-
-        @bounce_mails = @bounce_mails.order(timestamp: :desc).page(params[:page])
         @mask = !Rails.application.config.sisito.fetch(:authz).fetch(:disable_mask)
       end
     end
