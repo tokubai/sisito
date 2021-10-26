@@ -2,7 +2,7 @@ class BounceMailsController < ApplicationController
   before_action :set_bounce_mail, only: [:show]
 
   def index
-    @only_searched_bounce_mails = Rails.application.config.sisito.fetch(:only_searched_bounce_mails, false)
+    @show_all_bounce_mails = Rails.application.config.sisito.fetch(:show_all_bounce_mails, true)
     if params[:reason].present?
       cookies.delete(:query)
     else
@@ -42,11 +42,7 @@ class BounceMailsController < ApplicationController
           end
         }
       else
-        if @only_searched_bounce_mails
-          @bounce_mails = BounceMail.none
-          @reason = nil
-          @addresser = nil
-        else
+        if @show_all_bounce_mails
           @bounce_mails = BounceMail.select(:id, :timestamp, :recipient, :senderdomain, :addresser, :addresseralias, :reason, :digest, :subject, :softbounce,
                                                  'whitelist_mails.id AS whitelisted')
                                     .joins('LEFT JOIN whitelist_mails' +
@@ -64,6 +60,10 @@ class BounceMailsController < ApplicationController
           end
 
           @bounce_mails = @bounce_mails.order(timestamp: :desc).page(params[:page])
+        else
+          @bounce_mails = BounceMail.none
+          @reason = nil
+          @addresser = nil
         end
 
         @mask = !Rails.application.config.sisito.fetch(:authz).fetch(:disable_mask)
